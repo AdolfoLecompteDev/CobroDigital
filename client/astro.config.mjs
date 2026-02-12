@@ -1,15 +1,19 @@
-// astro.config.mjs
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import icon from 'astro-icon';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel'; // Usaremos el adaptador de Vercel
 
 export default defineConfig({
+  // 'server' permite que el login y las peticiones dinámicas funcionen en producción
+  output: 'server', 
+  
   integrations: [
     tailwind(), 
     icon()
   ],
-  adapter: node({
-    mode: 'standalone',
+  
+  adapter: vercel({
+    // Optimización para Vercel: usa funciones Edge o Serverless
+    webAnalytics: { enabled: true } 
   }),
 });
