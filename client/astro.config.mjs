@@ -1,10 +1,10 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import icon from 'astro-icon';
-import vercel from '@astrojs/vercel'; // Usaremos el adaptador de Vercel
+import vercel from '@astrojs/vercel';
 
 export default defineConfig({
-  // 'server' permite que el login y las peticiones dinámicas funcionen en producción
+  // Mantenemos 'server' para manejar el login y sesiones
   output: 'server', 
   
   integrations: [
@@ -13,7 +13,20 @@ export default defineConfig({
   ],
   
   adapter: vercel({
-    // Optimización para Vercel: usa funciones Edge o Serverless
-    webAnalytics: { enabled: true } 
+    // Cambiamos a Serverless Functions para mayor compatibilidad con librerías de Node
+    webAnalytics: { enabled: true },
+    isr: false // Desactivamos ISR para evitar conflictos con el Login dinámico
   }),
+
+  build: {
+    // Esto ayuda a Vercel a organizar mejor los archivos en estructuras de carpetas anidadas
+    format: 'directory'
+  },
+
+  // Asegura que Astro sepa que está corriendo en un subdirectorio si es necesario
+  vite: {
+    build: {
+      cssCodeSplit: true,
+    }
+  }
 });
