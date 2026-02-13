@@ -7,6 +7,7 @@ from datetime import datetime
 
 # Importaciones de tus archivos locales
 import models, database, auth, schemas
+from seed import create_admin  # Asegúrate de tener el archivo seed.py en la raíz
 
 # Inicializar tablas en la base de datos
 # Render ejecutará esto cada vez que inicie el servicio
@@ -14,9 +15,19 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="CobroDigital API - Producción")
 
+# --- EVENTO DE INICIO (STARTUP) ---
+# Se ejecuta automáticamente cada vez que el servidor arranca en Render
+@app.on_event("startup")
+def on_startup():
+    print("🚀 Iniciando servidor y verificando Admin...")
+    try:
+        create_admin()
+        print("✅ Proceso de seed finalizado.")
+    except Exception as e:
+        print(f"❌ Error al ejecutar la seed: {e}")
+
 # --- CONFIGURACIÓN DE CORS ---
-# Obtenemos la URL de Vercel de las variables de entorno para mayor seguridad
-# Si no existe, permite localhost para pruebas
+# Obtenemos la URL de Vercel de las variables de entorno
 VERCEL_URL = os.getenv("VERCEL_URL", "http://localhost:4321")
 
 origins = [
@@ -160,7 +171,7 @@ def registrar_pago(data: schemas.PagoCreate, db: Session = Depends(database.get_
     nuevo_pago = models.Pago(
         monto=data.monto,
         saldo_anterior=saldo_antes,
-        comentario=data.comentario,
+        commentario=data.comentario,
         cliente_id=data.cliente_id,
         fecha=datetime.utcnow()
     )
