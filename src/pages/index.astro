@@ -51,6 +51,12 @@ import { Icon } from 'astro-icon/components';
             Credenciales incorrectas o error de conexión
           </div>
 
+          <!-- DEBUG INFO - Para ver qué devuelve el backend -->
+          <div id="debug-info" class="hidden bg-yellow-50 text-yellow-800 text-xs p-4 rounded-xl border border-yellow-200 max-h-40 overflow-auto">
+            <strong>DEBUG - Respuesta del servidor:</strong>
+            <pre id="debug-content" class="mt-2 text-[10px] whitespace-pre-wrap"></pre>
+          </div>
+
           <button 
             type="submit" 
             id="submit-btn"
@@ -75,17 +81,14 @@ import { Icon } from 'astro-icon/components';
 
   const API_URL = 'https://cobrodigital.onrender.com';
 
-  // Variable de control para evitar múltiples verificaciones
   let isChecking = false;
 
   function checkExistingSession() {
-    // Evitar verificaciones múltiples
     if (isChecking) return;
     isChecking = true;
 
     const session = localStorage.getItem('currentUser');
     
-    // Si no hay sesión, permitir login
     if (!session || session === 'undefined' || session === 'null') {
       isChecking = false;
       return;
@@ -94,7 +97,6 @@ import { Icon } from 'astro-icon/components';
     try {
       const user = JSON.parse(session);
       
-      // Solo redirigir si hay un usuario válido
       if (user && user.username) {
         navigate('/dashboard');
       } else {
@@ -108,11 +110,12 @@ import { Icon } from 'astro-icon/components';
     }
   }
 
-  // Ejecutar UNA SOLA VEZ al cargar
   checkExistingSession();
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMsg = document.getElementById('error-msg');
+  const debugInfo = document.getElementById('debug-info');
+  const debugContent = document.getElementById('debug-content');
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
 
   form?.addEventListener('submit', async (e) => {
@@ -120,6 +123,7 @@ import { Icon } from 'astro-icon/components';
     if (!errorMsg || !submitBtn) return;
 
     errorMsg.classList.add('hidden');
+    debugInfo?.classList.add('hidden');
     submitBtn.disabled = true;
     const originalContent = submitBtn.innerHTML;
     submitBtn.innerHTML = '<span class="flex items-center gap-2"><svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Ingresando...</span>';
@@ -128,32 +132,82 @@ import { Icon } from 'astro-icon/components';
     const password = (document.getElementById('password') as HTMLInputElement).value;
 
     try {
+      console.log('🔄 Enviando login a:', `${API_URL}/login`);
+      
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
 
-      if (!response.ok) throw new Error('Auth failed');
+      console.log('📡 Status de respuesta:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const user = await response.json();
       
-      // Validar datos del usuario
-      if (!user || !user.username) {
-        throw new Error('Datos de usuario inválidos');
+      // 🔍 MOSTRAR QUÉ DEVUELVE EL BACKEND
+      console.log('📦 Datos recibidos del backend:', user);
+      console.log('📋 Tipo de datos:', typeof user);
+      console.log('🔑 Claves en el objeto:', Object.keys(user));
+      
+      if (debugContent && debugInfo) {
+        debugContent.textContent = JSON.stringify(user, null, 2);
+        debugInfo.classList.remove('hidden');
       }
 
-      // Guardar sesión
-      localStorage.setItem('currentUser', JSON.stringify(user));
+      // Validación más flexible - revisar diferentes posibles estructuras
+      let userData = null;
+
+      // Caso 1: El objeto ya tiene username directamente
+      if (user.username) {
+        userData = user;
+        console.log('✅ Caso 1: Usuario tiene username directo');
+      }
+      // Caso 2: Los datos vienen dentro de una propiedad 'user'
+      else if (user.user && user.user.username) {
+        userData = user.user;
+        console.log('✅ Caso 2: Usuario dentro de user.user');
+      }
+      // Caso 3: Los datos vienen dentro de 'data'
+      else if (user.data && user.data.username) {
+        userData = user.data;
+        console.log('✅ Caso 3: Usuario dentro de user.data');
+      }
+      // Caso 4: Tiene un campo id o _id (bases de datos)
+      else if (user.id || user._id) {
+        userData = {
+          ...user,
+          username: user.username || user.email || user.id || user._id
+        };
+        console.log('✅ Caso 4: Creando username desde id/email');
+      }
+
+      if (!userData) {
+        console.error('❌ No se pudo extraer datos de usuario válidos');
+        console.error('Estructura recibida:', user);
+        throw new Error('Estructura de usuario inválida');
+      }
+
+      console.log('💾 Guardando usuario:', userData);
+      localStorage.setItem('currentUser', JSON.stringify(userData));
       
-      // Navegar usando Astro transitions
+      console.log('🚀 Navegando a dashboard...');
       navigate('/dashboard');
 
     } catch (err) {
-      console.error('Error en login:', err);
+      console.error('❌ Error en login:', err);
       errorMsg.classList.remove('hidden');
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalContent;
+      
+      // Mostrar el error en el debug
+      if (debugContent && debugInfo) {
+        debugContent.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
+        debugInfo.classList.remove('hidden');
+      }
     }
   });
 </script>
