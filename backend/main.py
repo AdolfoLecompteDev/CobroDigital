@@ -28,17 +28,18 @@ def on_startup():
 
 # --- CONFIGURACIÓN DE CORS ---
 # Obtenemos la URL de Vercel de las variables de entorno
-VERCEL_URL = os.getenv("VERCEL_URL", "http://localhost:4321")
+VERCEL_URL = os.getenv("VERCEL_URL", "https://cobrodigitalweb.vercel.app")
 
 origins = [
     VERCEL_URL,
+    "https://cobrodigitalweb.vercel.app", # Agregada explícitamente sin "/"
     "http://localhost:4321",
     "http://127.0.0.1:4321"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins, # O puedes usar ["*"] si quieres evitar problemas para siempre
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
