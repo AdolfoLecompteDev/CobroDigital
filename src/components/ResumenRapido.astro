@@ -15,29 +15,35 @@ import { Icon } from 'astro-icon/components';
 </div>
 
 <script>
+  // Definimos la función globalmente para que el Dashboard pueda llamarla si quiere
+  // o se ejecute sola de forma segura.
   async function loadGlobalStats() {
-    // URL de producción de Render
     const API_URL = 'https://cobrodigital.onrender.com';
+    const container = document.getElementById('stats-container');
+    
+    // Verificación de seguridad: Si no hay usuario, no hacemos nada.
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (!user.role || user.role !== 'admin') {
+      if(container) container.innerHTML = ''; // Limpiar si no es admin
+      return;
+    }
 
     try {
-      // Reemplazamos localhost por la variable API_URL
+      // Agregamos un pequeño delay de 500ms para que no choque con la carga principal del Dashboard
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const [resClientes, resCobradores] = await Promise.all([
         fetch(`${API_URL}/clientes`),
         fetch(`${API_URL}/cobradores`)
       ]);
 
-      if (!resClientes.ok || !resCobradores.ok) throw new Error("Error en la respuesta del servidor");
+      if (!resClientes.ok || !resCobradores.ok) return;
 
       const clientes = await resClientes.json();
       const cobradores = await resCobradores.json();
 
-      // --- LÓGICA DE NEGOCIO ---
-      const totalCartera = clientes.reduce((acc, c) => acc + (c.saldo || 0), 0);
-      
-      // Ganancia Estimada (Intereses pactados)
-      const gananciaEstimada = clientes.reduce((acc, c) => {
-        return acc + (c.interes_pactado || 0); 
-      }, 0);
+      const totalCartera = clientes.reduce((acc, c) => acc + (Number(c.saldo) || 0), 0);
+      const gananciaEstimada = clientes.reduce((acc, c) => acc + (Number(c.interes_pactado) || 0), 0);
 
       const stats = [
         { 
@@ -70,11 +76,10 @@ import { Icon } from 'astro-icon/components';
         },
       ];
 
-      const container = document.getElementById('stats-container');
       if (container) {
         container.innerHTML = stats.map(stat => `
           <div class="bg-white p-6 rounded-[2.2rem] border border-slate-100 shadow-sm flex items-center gap-5">
-            <div class="${stat.bg} ${stat.color} w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+            <div class="${stat.bg} ${stat.color} w-14 h-14 rounded-2xl flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="${stat.path}"/>
               </svg>
@@ -87,13 +92,10 @@ import { Icon } from 'astro-icon/components';
         `).join('');
       }
     } catch (error) {
-      console.error("Error cargando estadísticas:", error);
-      const container = document.getElementById('stats-container');
-      if (container) {
-        container.innerHTML = `<p class="text-red-500 font-bold p-4">Error al conectar con el servidor de datos.</p>`;
-      }
+      console.error("Fallo silencioso en stats:", error);
     }
   }
 
-  loadGlobalStats();
+  // Ejecutar solo si el DOM está listo
+  document.addEventListener('DOMContentLoaded', loadGlobalStats);
 </script>
