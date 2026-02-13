@@ -85,7 +85,6 @@ import ResumenRapido from '../components/ResumenRapido.astro';
 
   const API_URL = 'https://cobrodigital.onrender.com';
 
-  // Variable de control para evitar múltiples verificaciones
   let isAuthenticated = false;
   let user: any = null;
 
@@ -166,7 +165,6 @@ import ResumenRapido from '../components/ResumenRapido.astro';
       const clientes = await resClientes.json();
       renderClientes(clientes);
 
-      // Actualizar badge con conteo
       if (badge) {
         badge.classList.remove('hidden');
         badge.innerText = `${clientes.length} Registro${clientes.length !== 1 ? 's' : ''}`;
@@ -189,7 +187,7 @@ import ResumenRapido from '../components/ResumenRapido.astro';
     }
   }
 
-  // 4. RENDER CLIENTES
+  // 4. RENDER CLIENTES CON ENLACES
   function renderClientes(lista: any[]) {
     const grid = document.getElementById('grid-clientes');
     if (!grid) return;
@@ -203,15 +201,16 @@ import ResumenRapido from '../components/ResumenRapido.astro';
       return;
     }
 
+    // ✅ AGREGADO: Enlaces <a href="/cliente/ID"> para navegar a cada cliente
     grid.innerHTML = lista.map(cliente => `
-      <div class="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all">
+      <a href="/cliente/${cliente.id}" class="group bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all block">
         <div class="flex items-start justify-between mb-4">
           <div>
-            <h3 class="font-black text-slate-900 text-lg">${cliente.nombre}</h3>
-            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">${cliente.direccion || 'Sin dirección'}</p>
+            <h3 class="font-black text-slate-900 text-lg group-hover:text-blue-600 transition-colors">${cliente.nombre}</h3>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">${cliente.direccion || cliente.barrio || 'Sin dirección'}</p>
           </div>
-          <div class="bg-slate-100 p-2 rounded-xl">
-            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="bg-slate-100 group-hover:bg-blue-50 p-2 rounded-xl transition-colors">
+            <svg class="w-5 h-5 text-slate-600 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
             </svg>
           </div>
@@ -222,33 +221,45 @@ import ResumenRapido from '../components/ResumenRapido.astro';
             <span class="text-sm font-black text-slate-900">${cliente.telefono || 'N/A'}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-xs font-bold text-slate-400">Deuda</span>
-            <span class="text-lg font-black text-red-600">$${Number(cliente.deuda || 0).toLocaleString()}</span>
+            <span class="text-xs font-bold text-slate-400">Saldo</span>
+            <span class="text-lg font-black text-red-600 group-hover:text-blue-600 transition-colors">$${Number(cliente.saldo || 0).toLocaleString()}</span>
           </div>
         </div>
-      </div>
+        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-[9px] font-black uppercase tracking-widest ${cliente.activo ? 'text-emerald-500' : 'text-slate-300'}">
+            ${cliente.activo ? '● Activo' : '● Finalizado'}
+          </span>
+          <span class="text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+            Ver detalles →
+          </span>
+        </div>
+      </a>
     `).join('');
   }
 
-  // 5. RENDER COBRADORES
+  // 5. RENDER COBRADORES CON ENLACES
   function renderCobradores(lista: any[]) {
     const container = document.getElementById('lista-cobradores');
     if (!container) return;
 
+    // ✅ AGREGADO: Enlaces <a href="/cobrador/USERNAME"> para navegar a cada cobrador
     container.innerHTML = lista.map(cobrador => `
-      <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+      <a href="/cobrador/${cobrador.username}" class="group bg-white rounded-2xl border border-slate-100 p-4 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all block">
         <div class="flex items-center gap-3">
-          <div class="bg-blue-100 p-3 rounded-xl">
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="bg-blue-100 group-hover:bg-blue-600 p-3 rounded-xl transition-colors">
+            <svg class="w-5 h-5 text-blue-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
             </svg>
           </div>
-          <div>
-            <h4 class="font-black text-slate-900">${cobrador.nombre}</h4>
+          <div class="flex-1">
+            <h4 class="font-black text-slate-900 group-hover:text-blue-600 transition-colors">${cobrador.nombre}</h4>
             <p class="text-xs text-slate-400 font-bold">@${cobrador.username}</p>
           </div>
+          <svg class="w-5 h-5 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
         </div>
-      </div>
+      </a>
     `).join('');
   }
 
