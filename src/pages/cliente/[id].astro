@@ -120,23 +120,26 @@ const { id } = Astro.params;
 </Layout>
 
 <script define:vars={{ id }}>
-  async function loadData() {
-    // URL de producción de Render
-    const API_URL = 'https://cobrodigital.onrender.com';
+  import { navigate } from 'astro:transitions/client';
 
+  const API_URL = 'https://cobrodigital.onrender.com';
+
+  async function loadData() {
     try {
-      // Cambio de localhost a API_URL
       const resClientes = await fetch(`${API_URL}/clientes`);
       const clientes = await resClientes.json();
       const cliente = clientes.find(c => c.id == id);
 
-      if (!cliente) return window.location.href = '/dashboard';
+      // ✅ CAMBIADO: usar navigate en lugar de window.location.href
+      if (!cliente) {
+        console.log('Cliente no encontrado, redirigiendo...');
+        navigate('/dashboard');
+        return;
+      }
 
-      // Cambio de localhost a API_URL
       const resPagos = await fetch(`${API_URL}/pagos/${id}`);
       const pagos = await resPagos.json();
 
-      // Rellenar UI
       document.getElementById('view-nombre').innerText = cliente.nombre;
       document.getElementById('view-barrio').innerText = cliente.barrio;
       document.getElementById('view-telefono').innerText = cliente.telefono || 'Sin registro';
@@ -222,4 +225,9 @@ const { id } = Astro.params;
   }
 
   loadData();
+
+  // Re-cargar datos después de transiciones de página
+  document.addEventListener('astro:page-load', () => {
+    loadData();
+  });
 </script>

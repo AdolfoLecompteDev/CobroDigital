@@ -54,16 +54,13 @@ const { id } = Astro.params;
 
 <script define:vars={{ id }}>
   let datosCobradorActual = null;
-  // URL de producción de Render
   const API_URL = 'https://cobrodigital.onrender.com';
 
   async function loadCobradorData() {
     try {
-      // 1. Obtener Clientes del Cobrador usando la API de Render
       const resClientes = await fetch(`${API_URL}/clientes?cobrador_id=${id}`);
       const clientes = await resClientes.json();
 
-      // 2. Obtener Datos del Cobrador usando la API de Render
       const resCobs = await fetch(`${API_URL}/cobradores`);
       const cobradores = await resCobs.json();
       const cobrador = cobradores.find(c => c.username === id);
@@ -71,11 +68,9 @@ const { id } = Astro.params;
       if (!cobrador) throw new Error("Cobrador no encontrado");
       datosCobradorActual = cobrador;
 
-      // 3. Cálculos de métricas
       const totalCartera = clientes.reduce((acc, c) => acc + (c.saldo || 0), 0);
       const clientesActivos = clientes.filter(c => c.activo).length;
 
-      // 4. Renderizar Card Principal
       const cardContent = document.getElementById('card-content');
       cardContent.innerHTML = `
         <div class="flex flex-col lg:flex-row gap-12 items-center relative w-full">
@@ -109,13 +104,13 @@ const { id } = Astro.params;
       document.getElementById('card-loader').classList.add('hidden');
       cardContent.classList.remove('hidden');
 
-      // 5. Renderizar Lista de Clientes
       document.getElementById('client-count').innerText = `${clientes.length} Clientes en Cartera`;
       
       const grid = document.getElementById('clientes-grid');
       if (clientes.length === 0) {
         grid.innerHTML = `<p class="col-span-full text-center py-20 text-slate-400 font-bold uppercase tracking-widest">No hay clientes asignados</p>`;
       } else {
+        // ✅ Los <a href> funcionan automáticamente con View Transitions
         grid.innerHTML = clientes.map(c => `
           <a href="/cliente/${c.id}" class="group bg-white p-8 rounded-[2.5rem] border border-slate-100 flex justify-between items-center shadow-sm hover:shadow-xl hover:border-blue-100 transition-all">
             <div class="flex items-center gap-5">
@@ -143,7 +138,6 @@ const { id } = Astro.params;
     }
   }
 
-  // LÓGICA DEL BOTÓN EDITAR
   document.getElementById('editBtn')?.addEventListener('click', () => {
     if (!datosCobradorActual) return;
     
@@ -161,4 +155,9 @@ const { id } = Astro.params;
   });
 
   loadCobradorData();
+
+  // Re-cargar datos después de transiciones de página
+  document.addEventListener('astro:page-load', () => {
+    loadCobradorData();
+  });
 </script>
