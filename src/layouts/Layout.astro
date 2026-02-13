@@ -79,28 +79,58 @@ const { title } = Astro.props;
     </footer>
 
     <script>
-      // Lógica para detectar usuario y mostrar en el Nav
-      const user = JSON.parse(localStorage.getItem('currentUser'));
-      const userDisplay = document.getElementById('user-display');
-      
-      if (user && userDisplay) {
-        userDisplay.classList.remove('hidden');
-        document.getElementById('nav-user-name').innerText = user.nombre || user.username;
-        document.getElementById('nav-user-role').innerText = user.role;
-      }
+  // Usamos una función para encapsular y evitar conflictos de variables
+  function initLayout() {
+    const userDisplay = document.getElementById('user-display');
+    const navUserName = document.getElementById('nav-user-name');
+    const navUserRole = document.getElementById('nav-user-role');
+    
+    // 1. Intentar obtener el usuario de forma segura
+    const rawData = localStorage.getItem('currentUser');
+    
+    // Si no hay datos, nos aseguramos de que el display esté oculto y salimos
+    if (!rawData || rawData === 'undefined' || rawData === 'null') {
+      if (userDisplay) userDisplay.classList.add('hidden');
+      return; 
+    }
 
-      // Efecto de scroll en el nav
-      window.addEventListener('scroll', () => {
-        const nav = document.getElementById('main-nav');
-        if (window.scrollY > 20) {
-          nav.classList.add('shadow-xl', 'shadow-blue-900/5', 'py-3');
-          nav.classList.remove('py-4');
-        } else {
-          nav.classList.remove('shadow-xl', 'shadow-blue-900/5', 'py-3');
-          nav.classList.add('py-4');
-        }
-      });
-    </script>
+    try {
+      const user = JSON.parse(rawData);
+      
+      // 2. Solo si el objeto user tiene lo que necesitamos, lo mostramos
+      if (user && (user.nombre || user.username) && userDisplay) {
+        userDisplay.classList.remove('hidden');
+        if (navUserName) navUserName.innerText = user.nombre || user.username;
+        if (navUserRole) navUserRole.innerText = user.role || 'Usuario';
+      }
+    } catch (e) {
+      console.error("Error leyendo sesión en Layout");
+      if (userDisplay) userDisplay.classList.add('hidden');
+    }
+  }
+
+  // Ejecutar al cargar
+  initLayout();
+
+  // 3. Efecto de scroll optimizado (Throttle manual)
+  let lastScroll = 0;
+  window.addEventListener('scroll', () => {
+    const now = window.scrollY;
+    if (Math.abs(now - lastScroll) < 10) return; // Solo actuar si el scroll es significativo
+    lastScroll = now;
+
+    const nav = document.getElementById('main-nav');
+    if (!nav) return;
+
+    if (now > 20) {
+      nav.classList.add('shadow-xl', 'shadow-blue-900/5', 'py-3');
+      nav.classList.remove('py-4');
+    } else {
+      nav.classList.remove('shadow-xl', 'shadow-blue-900/5', 'py-3');
+      nav.classList.add('py-4');
+    }
+  }, { passive: true }); // passive ayuda al rendimiento
+</script>
   </body>
 </html>
 
