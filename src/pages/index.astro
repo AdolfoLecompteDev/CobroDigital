@@ -1,204 +1,158 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
-import ResumenRapido from '../components/ResumenRapido.astro'; 
 ---
 
-<Layout title="Panel de Control - CobroDigital">
-  <nav class="max-w-7xl mx-auto px-6 pt-8 flex justify-between items-center">
-    <div id="user-tag" class="flex items-center gap-3 bg-white px-5 py-2.5 rounded-2xl border border-slate-100 shadow-sm">
-        <div id="role-icon" class="w-2.5 h-2.5 rounded-full animate-pulse"></div>
-        <span id="role-text" class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Verificando...</span>
-    </div>
-
-    <button id="logout-btn" class="group flex items-center gap-2 text-slate-400 hover:text-red-500 font-black text-[10px] uppercase tracking-[0.2em] transition-all">
-      <div class="bg-slate-100 group-hover:bg-red-50 p-2.5 rounded-xl transition-colors">
-        <Icon name="lucide:log-out" class="w-4 h-4" />
-      </div>
-      Finalizar Sesión
-    </button>
-  </nav>
-
-  <div class="max-w-7xl mx-auto px-6 py-10">
-    
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-8">
-      <div>
-        <h1 class="text-5xl font-black text-slate-900 tracking-tighter flex items-center gap-4">
-          <div class="bg-blue-600 p-3 rounded-[1.2rem] shadow-lg shadow-blue-200">
-            <Icon name="lucide:layout-grid" class="text-white w-7 h-7" /> 
-          </div>
-          Central
-        </h1>
-        <p class="text-slate-500 font-bold mt-2 ml-1 uppercase text-[9px] tracking-[0.3em]">Operaciones de Cartera en Tiempo Real</p>
-      </div>
+<Layout title="Ingreso - CobroDigital">
+  <main class="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div class="w-full max-w-md">
       
-      <div class="flex flex-wrap gap-4">
-        <a id="btn-nuevo-cobrador" href="/nuevo-cobrador" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-900 px-6 py-4 rounded-2xl font-black flex items-center gap-3 transition-all active:scale-95 text-xs uppercase tracking-widest group">
-          <Icon name="lucide:shield-plus" class="w-4 h-4 text-blue-600" /> 
-          Personal
-        </a>
-
-        <a href="/nuevo-cliente" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-blue-100 transition-all active:scale-95 text-xs uppercase tracking-widest group">
-          <Icon name="lucide:plus-circle" class="w-5 h-5" /> 
-          Registrar Crédito
-        </a>
-      </div>
-    </div>
-
-    <div id="stats-container" class="hidden mb-16 animate-in fade-in duration-1000">
-      <div class="flex items-center gap-3 mb-6 pl-1">
-        <div class="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
-        <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Balance de Utilidades</h2>
-      </div>
-      <ResumenRapido />
-    </div>
-
-    <div id="cobradores-container" class="hidden mb-16">
-        <div class="mb-6 flex items-center gap-3 pl-1">
-            <div class="w-1.5 h-4 bg-blue-600 rounded-full"></div>
-            <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cobradores en Ruta</h2>
+      <div class="text-center mb-10">
+        <div class="inline-flex bg-blue-600 p-4 rounded-[1.5rem] shadow-xl shadow-blue-200 mb-6">
+          <Icon name="lucide:shield-check" class="text-white w-10 h-10" />
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="lista-cobradores">
+        <h1 class="text-4xl font-black text-slate-900 tracking-tighter">CobroDigital</h1>
+        <p class="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">Sistema de Gestión de Cartera</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+        <form id="login-form" class="space-y-5">
+          <div>
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Usuario</label>
+            <div class="relative">
+              <Icon name="lucide:user" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5" />
+              <input 
+                type="text" 
+                id="username"
+                name="username"
+                required
+                placeholder="Ingresa tu usuario"
+                class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-600 transition-all outline-none"
+              />
             </div>
-    </div>
+          </div>
 
-    <div class="mb-6 flex items-center justify-between px-1">
-        <div class="flex items-center gap-3">
-            <div class="w-1.5 h-4 bg-slate-800 rounded-full"></div>
-            <h2 id="list-title" class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cargando Cartera...</h2>
-        </div>
-        <div id="client-badge" class="hidden bg-blue-50 text-blue-600 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter border border-blue-100">
-            0 Registros
-        </div>
-    </div>
+          <div>
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Contraseña</label>
+            <div class="relative">
+              <Icon name="lucide:lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5" />
+              <input 
+                type="password" 
+                id="password"
+                name="password"
+                required
+                placeholder="••••••••"
+                class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-600 transition-all outline-none"
+              />
+            </div>
+          </div>
 
-    <div id="grid-clientes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-        {[1,2,3,4].map(() => (
-            <div class="bg-white h-52 rounded-[2rem] border border-slate-100 animate-pulse"></div>
-        ))}
+          <div id="error-msg" class="hidden bg-red-50 text-red-500 text-xs font-bold p-4 rounded-xl border border-red-100 animate-shake">
+            Credenciales incorrectas o error de conexión
+          </div>
+
+          <button 
+            type="submit" 
+            id="submit-btn"
+            class="w-full bg-slate-900 hover:bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-xs tracking-widest group"
+          >
+            <span id="btn-text">Entrar al Sistema</span>
+            <Icon name="lucide:arrow-right" id="btn-icon" class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </form>
+      </div>
+
+      <div class="mt-8 flex items-center justify-center gap-2">
+        <div id="status-dot" class="w-2 h-2 bg-slate-300 rounded-full animate-pulse"></div>
+        <span id="status-text" class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Verificando Servidor...</span>
+      </div>
     </div>
-  </div>
+  </main>
 </Layout>
 
 <script>
-  // Definición de la URL de producción
   const API_URL = 'https://cobrodigital.onrender.com';
 
-  const user = JSON.parse(localStorage.getItem('currentUser'));
-  if (!user) window.location.href = '/';
-
-  const statsCont = document.getElementById('stats-container');
-  const cobradoresCont = document.getElementById('cobradores-container');
-  const btnCobrador = document.getElementById('btn-nuevo-cobrador');
-  const grid = document.getElementById('grid-clientes');
-  const title = document.getElementById('list-title');
-
-  // UI Setup inicial
-  if (user.role === 'admin') {
-    statsCont?.classList.remove('hidden');
-    cobradoresCont?.classList.remove('hidden');
-    btnCobrador?.classList.remove('hidden');
-    document.getElementById('role-text').innerText = "Admin Master";
-    document.getElementById('role-icon').classList.add('bg-emerald-500');
-    title.innerText = "Cartera Global";
-  } else {
-    document.getElementById('role-text').innerText = `Ruta: ${user.nombre || user.username}`;
-    document.getElementById('role-icon').classList.add('bg-blue-500');
-    title.innerText = "Mi Listado de Cobro";
+  // 1. Redirección automática si ya existe sesión
+  if (localStorage.getItem('currentUser')) {
+    window.location.href = '/dashboard';
   }
 
-  async function fetchData() {
+  const form = document.getElementById('login-form') as HTMLFormElement;
+  const errorMsg = document.getElementById('error-msg');
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+
+  // 2. Verificar si el backend está activo (Health Check)
+  async function checkServer() {
     try {
-      // Ajuste de URLs dinámicas según el rol
-      const urlClientes = user.role === 'admin' 
-        ? `${API_URL}/clientes` 
-        : `${API_URL}/clientes?cobrador_id=${user.username}`;
-      
-      const [resClientes, resCobs] = await Promise.all([
-        fetch(urlClientes),
-        user.role === 'admin' ? fetch(`${API_URL}/cobradores`) : Promise.resolve(null)
-      ]);
-
-      if (!resClientes.ok) throw new Error("Error en la carga");
-
-      const clientes = await resClientes.json();
-      renderClientes(clientes);
-
-      if (resCobs && resCobs.ok) {
-        const cobradores = await resCobs.json();
-        renderCobradores(cobradores);
+      // Intentamos una petición rápida para despertar a Render
+      const res = await fetch(`${API_URL}/clientes`);
+      if (res.ok || res.status === 401) { // 401 significa que el servidor respondió pero no estamos autorizados (está vivo)
+        if (statusDot) statusDot.style.backgroundColor = '#10b981'; // emerald-500
+        if (statusText) statusText.innerText = "Servidor Online";
       }
-    } catch (error) {
-      console.error(error);
-      grid.innerHTML = `
-        <div class="col-span-full text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
-          <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">El servidor está despertando...</p>
-          <p class="text-slate-900 font-black mt-2">Reintentando conexión automáticamente</p>
-        </div>`;
-      // Reintento automático en 5 segundos si falla (útil para el "cold start" de Render)
-      setTimeout(fetchData, 5000);
+    } catch (e) {
+      if (statusText) statusText.innerText = "Servidor Despertando...";
     }
   }
+  checkServer();
 
-  function renderClientes(lista) {
-    const badge = document.getElementById('client-badge');
-    badge.innerText = `${lista.length} CLIENTES`;
-    badge.classList.remove('hidden');
+  // 3. Manejo del Login
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!errorMsg || !submitBtn) return;
 
-    if (lista.length === 0) {
-      grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 font-bold uppercase text-[10px]">No hay registros para mostrar</div>`;
-      return;
+    errorMsg.classList.add('hidden');
+    
+    // Estado de carga en el botón
+    const originalContent = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span>Validando...</span>
+    `;
+
+    const username = (document.getElementById('username') as HTMLInputElement).value;
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (!response.ok) throw new Error('Credenciales incorrectas');
+
+      const user = await response.json();
+      
+      // Guardar datos del usuario
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      
+      // Ir al dashboard
+      window.location.href = '/dashboard';
+
+    } catch (err) {
+      errorMsg.classList.remove('hidden');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalContent;
     }
-
-    grid.innerHTML = lista.map(c => `
-      <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-900/5 transition-all group flex flex-col justify-between min-h-[260px]">
-        <div>
-          <div class="flex justify-between items-start mb-4">
-            <div class="bg-slate-50 text-slate-400 p-3 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <div class="text-right">
-              <p class="text-[8px] font-black text-slate-300 uppercase tracking-tighter">Cuota</p>
-              <p class="text-sm font-black text-slate-900">$${(c.cuota || 0).toLocaleString()}</p>
-            </div>
-          </div>
-          <h3 class="text-lg font-black text-slate-800 leading-tight mb-1 group-hover:text-blue-600 transition-colors">${c.nombre}</h3>
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight truncate">${c.barrio || 'Sin ubicación'}</p>
-        </div>
-
-        <div class="mt-6 pt-4 border-t border-slate-50 flex items-end justify-between">
-          <div>
-            <p class="text-[8px] text-slate-300 uppercase font-black mb-1">Saldo</p>
-            <p class="text-xl font-black text-slate-900">$${(c.saldo || 0).toLocaleString()}</p>
-          </div>
-          <a href="/cliente/${c.id}" class="bg-slate-900 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-all shadow-lg active:scale-90">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
-          </a>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function renderCobradores(lista) {
-    const cont = document.getElementById('lista-cobradores');
-    if (!cont) return;
-    cont.innerHTML = lista.map(cob => `
-      <a href="/cobrador/${cob.username}" class="bg-white rounded-2xl p-4 border border-slate-100 hover:border-blue-200 transition-all flex items-center gap-4 group">
-        <div class="bg-blue-50 text-blue-600 p-2.5 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        </div>
-        <div class="overflow-hidden">
-          <p class="text-xs font-black text-slate-900 truncate">${cob.nombre}</p>
-          <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">${cob.zona || 'Sin Zona'}</p>
-        </div>
-      </a>
-    `).join('');
-  }
-
-  document.getElementById('logout-btn').onclick = () => {
-    localStorage.removeItem('currentUser');
-    window.location.href = '/';
-  };
-
-  fetchData();
+  });
 </script>
+
+<style>
+  .animate-shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  }
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+  }
+</style>

@@ -73,43 +73,52 @@ import ResumenRapido from '../components/ResumenRapido.astro';
     </div>
 
     <div id="grid-clientes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-        {[1,2,3,4].map(() => (
-            <div class="bg-white h-52 rounded-[2rem] border border-slate-100 animate-pulse"></div>
+        {[1,2,3,4,5,6,7,8].map(() => (
+            <div class="bg-white h-64 rounded-[2rem] border border-slate-100 animate-pulse shadow-sm"></div>
         ))}
     </div>
   </div>
 </Layout>
 
 <script>
-  // Definición de la URL de producción
   const API_URL = 'https://cobrodigital.onrender.com';
 
-  const user = JSON.parse(localStorage.getItem('currentUser'));
-  if (!user) window.location.href = '/';
+  // 1. Verificación de Seguridad Inmediata
+  const rawUser = localStorage.getItem('currentUser');
+  if (!rawUser) {
+    window.location.href = '/';
+  }
 
+  const user = JSON.parse(rawUser || '{}');
+
+  // 2. Elementos del DOM
   const statsCont = document.getElementById('stats-container');
   const cobradoresCont = document.getElementById('cobradores-container');
   const btnCobrador = document.getElementById('btn-nuevo-cobrador');
   const grid = document.getElementById('grid-clientes');
   const title = document.getElementById('list-title');
+  const roleText = document.getElementById('role-text');
+  const roleIcon = document.getElementById('role-icon');
 
-  // UI Setup inicial
-  if (user.role === 'admin') {
-    statsCont?.classList.remove('hidden');
-    cobradoresCont?.classList.remove('hidden');
-    btnCobrador?.classList.remove('hidden');
-    document.getElementById('role-text').innerText = "Admin Master";
-    document.getElementById('role-icon').classList.add('bg-emerald-500');
-    title.innerText = "Cartera Global";
-  } else {
-    document.getElementById('role-text').innerText = `Ruta: ${user.nombre || user.username}`;
-    document.getElementById('role-icon').classList.add('bg-blue-500');
-    title.innerText = "Mi Listado de Cobro";
+  // 3. Configuración de Interfaz según Rol
+  function setupUI() {
+    if (user.role === 'admin') {
+      statsCont?.classList.remove('hidden');
+      cobradoresCont?.classList.remove('hidden');
+      btnCobrador?.classList.remove('hidden');
+      if (roleText) roleText.innerText = "Admin Master";
+      roleIcon?.classList.add('bg-emerald-500');
+      if (title) title.innerText = "Cartera Global";
+    } else {
+      if (roleText) roleText.innerText = `Ruta: ${user.nombre || user.username}`;
+      roleIcon?.classList.add('bg-blue-500');
+      if (title) title.innerText = "Mi Listado de Cobro";
+    }
   }
 
+  // 4. Obtención de Datos
   async function fetchData() {
     try {
-      // Ajuste de URLs dinámicas según el rol
       const urlClientes = user.role === 'admin' 
         ? `${API_URL}/clientes` 
         : `${API_URL}/clientes?cobrador_id=${user.username}`;
@@ -119,7 +128,7 @@ import ResumenRapido from '../components/ResumenRapido.astro';
         user.role === 'admin' ? fetch(`${API_URL}/cobradores`) : Promise.resolve(null)
       ]);
 
-      if (!resClientes.ok) throw new Error("Error en la carga");
+      if (!resClientes.ok) throw new Error("Error en servidor");
 
       const clientes = await resClientes.json();
       renderClientes(clientes);
@@ -129,24 +138,31 @@ import ResumenRapido from '../components/ResumenRapido.astro';
         renderCobradores(cobradores);
       }
     } catch (error) {
-      console.error(error);
-      grid.innerHTML = `
-        <div class="col-span-full text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
-          <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">El servidor está despertando...</p>
-          <p class="text-slate-900 font-black mt-2">Reintentando conexión automáticamente</p>
-        </div>`;
-      // Reintento automático en 5 segundos si falla (útil para el "cold start" de Render)
-      setTimeout(fetchData, 5000);
+      console.error("Fetch error:", error);
+      if (grid) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
+            <div class="animate-spin inline-block w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
+            <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">El servidor está despertando...</p>
+            <p class="text-slate-900 font-black mt-2">Sincronizando con la nube de Render</p>
+          </div>`;
+      }
+      setTimeout(fetchData, 5000); 
     }
   }
 
+  // 5. Renderizado de Componentes
   function renderClientes(lista) {
     const badge = document.getElementById('client-badge');
-    badge.innerText = `${lista.length} CLIENTES`;
-    badge.classList.remove('hidden');
+    if (badge) {
+      badge.innerText = `${lista.length} CLIENTES`;
+      badge.classList.remove('hidden');
+    }
+
+    if (!grid) return;
 
     if (lista.length === 0) {
-      grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 font-bold uppercase text-[10px]">No hay registros para mostrar</div>`;
+      grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400 font-bold uppercase text-[10px]">No hay préstamos registrados</div>`;
       return;
     }
 
@@ -158,8 +174,8 @@ import ResumenRapido from '../components/ResumenRapido.astro';
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
             <div class="text-right">
-              <p class="text-[8px] font-black text-slate-300 uppercase tracking-tighter">Cuota</p>
-              <p class="text-sm font-black text-slate-900">$${(c.cuota || 0).toLocaleString()}</p>
+              <p class="text-[8px] font-black text-slate-300 uppercase tracking-tighter">Cuota Diaria</p>
+              <p class="text-sm font-black text-slate-900">$${Number(c.cuota || 0).toLocaleString()}</p>
             </div>
           </div>
           <h3 class="text-lg font-black text-slate-800 leading-tight mb-1 group-hover:text-blue-600 transition-colors">${c.nombre}</h3>
@@ -168,8 +184,8 @@ import ResumenRapido from '../components/ResumenRapido.astro';
 
         <div class="mt-6 pt-4 border-t border-slate-50 flex items-end justify-between">
           <div>
-            <p class="text-[8px] text-slate-300 uppercase font-black mb-1">Saldo</p>
-            <p class="text-xl font-black text-slate-900">$${(c.saldo || 0).toLocaleString()}</p>
+            <p class="text-[8px] text-slate-300 uppercase font-black mb-1">Saldo Pendiente</p>
+            <p class="text-xl font-black text-slate-900">$${Number(c.saldo || 0).toLocaleString()}</p>
           </div>
           <a href="/cliente/${c.id}" class="bg-slate-900 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-all shadow-lg active:scale-90">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
@@ -195,10 +211,16 @@ import ResumenRapido from '../components/ResumenRapido.astro';
     `).join('');
   }
 
-  document.getElementById('logout-btn').onclick = () => {
-    localStorage.removeItem('currentUser');
-    window.location.href = '/';
-  };
+  // 6. Cierre de Sesión
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.onclick = () => {
+      localStorage.removeItem('currentUser');
+      window.location.href = '/';
+    };
+  }
 
+  // Inicialización
+  setupUI();
   fetchData();
 </script>
