@@ -71,13 +71,45 @@ import { Icon } from 'astro-icon/components';
 </Layout>
 
 <script>
+  import { navigate } from 'astro:transitions/client';
+
   const API_URL = 'https://cobrodigital.onrender.com';
 
-  // 1. Redirección relámpago: Evitar bucle si ya hay sesión
-  const session = localStorage.getItem('currentUser');
-  if (session && session !== 'undefined' && session !== 'null') {
-    window.location.replace('/dashboard');
+  // Variable de control para evitar múltiples verificaciones
+  let isChecking = false;
+
+  function checkExistingSession() {
+    // Evitar verificaciones múltiples
+    if (isChecking) return;
+    isChecking = true;
+
+    const session = localStorage.getItem('currentUser');
+    
+    // Si no hay sesión, permitir login
+    if (!session || session === 'undefined' || session === 'null') {
+      isChecking = false;
+      return;
+    }
+
+    try {
+      const user = JSON.parse(session);
+      
+      // Solo redirigir si hay un usuario válido
+      if (user && user.username) {
+        navigate('/dashboard');
+      } else {
+        localStorage.removeItem('currentUser');
+        isChecking = false;
+      }
+    } catch (e) {
+      console.error('Error al verificar sesión:', e);
+      localStorage.removeItem('currentUser');
+      isChecking = false;
+    }
   }
+
+  // Ejecutar UNA SOLA VEZ al cargar
+  checkExistingSession();
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMsg = document.getElementById('error-msg');
@@ -90,6 +122,7 @@ import { Icon } from 'astro-icon/components';
     errorMsg.classList.add('hidden');
     submitBtn.disabled = true;
     const originalContent = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span class="flex items-center gap-2"><svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Ingresando...</span>';
 
     const username = (document.getElementById('username') as HTMLInputElement).value;
     const password = (document.getElementById('password') as HTMLInputElement).value;
@@ -104,11 +137,20 @@ import { Icon } from 'astro-icon/components';
       if (!response.ok) throw new Error('Auth failed');
 
       const user = await response.json();
-      // Guardar con validación
+      
+      // Validar datos del usuario
+      if (!user || !user.username) {
+        throw new Error('Datos de usuario inválidos');
+      }
+
+      // Guardar sesión
       localStorage.setItem('currentUser', JSON.stringify(user));
-      window.location.replace('/dashboard');
+      
+      // Navegar usando Astro transitions
+      navigate('/dashboard');
 
     } catch (err) {
+      console.error('Error en login:', err);
       errorMsg.classList.remove('hidden');
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalContent;
