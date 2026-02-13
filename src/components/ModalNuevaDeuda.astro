@@ -64,6 +64,9 @@ const { clienteId } = Astro.props;
   const bgCerrar = document.getElementById('close-deuda-bg');
   const form = document.getElementById('form-nueva-deuda');
 
+  // URL de producción de Render
+  const API_URL = 'https://cobrodigital.onrender.com';
+
   btnAbrir?.addEventListener('click', () => {
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -80,21 +83,20 @@ const { clienteId } = Astro.props;
     e.preventDefault();
     const data = Object.fromEntries(new FormData(form));
     
-    // Obtenemos los datos actuales del cliente para no borrarlos (dirección, etc)
-    // En una app real podrías pedir solo monto e interés y que el backend maneje el resto
     try {
-      const res = await fetch(`http://localhost:8000/clientes/${clienteId}/nueva-deuda`, {
+      // Reemplazado localhost por la URL de Render
+      const res = await fetch(`${API_URL}/clientes/${clienteId}/nueva-deuda`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           saldo: Number(data.saldo),
           interes: Number(data.interes),
-          // Enviamos placeholders para los campos obligatorios del esquema ClienteCreate
-          nombre: document.getElementById('view-nombre').innerText,
-          barrio: document.getElementById('view-barrio').innerText,
-          direccion: document.getElementById('view-direccion').innerText,
-          telefono: document.getElementById('view-telefono').innerText,
-          cobrador_id: "system" // No se cambia el cobrador
+          // Obtenemos los datos actuales del DOM para completar el esquema
+          nombre: document.getElementById('view-nombre')?.innerText || "",
+          barrio: document.getElementById('view-barrio')?.innerText || "",
+          direccion: document.getElementById('view-direccion')?.innerText || "",
+          telefono: document.getElementById('view-telefono')?.innerText || "",
+          cobrador_id: "system" 
         })
       });
 
@@ -102,10 +104,12 @@ const { clienteId } = Astro.props;
         alert("✅ Cliente reactivado correctamente");
         window.location.reload();
       } else {
-        alert("❌ Error al reactivar deuda");
+        const errorData = await res.json();
+        alert("❌ Error: " + (errorData.detail || "No se pudo reactivar la deuda"));
       }
     } catch (err) {
       console.error(err);
+      alert("❌ Error de conexión con el servidor");
     }
   });
 </script>

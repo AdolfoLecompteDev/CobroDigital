@@ -132,6 +132,9 @@ import { Icon } from 'astro-icon/components';
 </Layout>
 
 <script>
+  // URL de producción de Render
+  const API_URL = 'https://cobrodigital.onrender.com';
+
   const form = document.getElementById('clienteForm') as HTMLFormElement;
   const capitalIn = document.getElementById('capital') as HTMLInputElement;
   const porcentajeIn = document.getElementById('porcentaje') as HTMLInputElement;
@@ -147,11 +150,8 @@ import { Icon } from 'astro-icon/components';
     const montoInteres = capital * (porcentaje / 100);
     const total = capital + montoInteres;
 
-    // Actualizar visuales
     interesMontoVisual.value = montoInteres.toFixed(0);
     if(totalDisplay) totalDisplay.innerText = `$ ${total.toLocaleString()}`;
-    
-    // El saldo total es lo que se guarda para iniciar la cuenta
     hiddenSaldo.value = total.toString();
   };
 
@@ -159,12 +159,13 @@ import { Icon } from 'astro-icon/components';
 
   async function cargarCobradores() {
     try {
-      const res = await fetch('http://localhost:8000/cobradores');
+      // Uso de API_URL
+      const res = await fetch(`${API_URL}/cobradores`);
       const data = await res.json();
       select.innerHTML = '<option value="">Seleccionar Agente</option>' + 
         data.map(c => `<option value="${c.username}">${c.nombre} (${c.zona || 'Global'})</option>`).join('');
     } catch (e) {
-      select.innerHTML = '<option value="">Error de conexión</option>';
+      select.innerHTML = '<option value="">Error de conexión con el servidor</option>';
     }
   }
 
@@ -176,7 +177,6 @@ import { Icon } from 'astro-icon/components';
     const formData = new FormData(form);
     const payload = Object.fromEntries(formData);
     
-    // Convertir tipos para el Backend de forma segura
     const cleanPayload = {
       nombre: String(payload.nombre),
       cobrador_id: String(payload.cobrador_id),
@@ -185,14 +185,15 @@ import { Icon } from 'astro-icon/components';
       telefono: String(payload.telefono),
       frecuencia: String(payload.frecuencia),
       capital_prestado: Number(payload.capital_prestado),
-      interes: Number(payload.interes), // Ahora sí enviará "20"
+      interes: Number(payload.interes),
       saldo: Number(payload.saldo),
       cuota_sugerida: Number(payload.cuota_sugerida),
       activo: true
     };
 
     try {
-      const res = await fetch('http://localhost:8000/clientes', {
+      // Uso de API_URL
+      const res = await fetch(`${API_URL}/clientes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cleanPayload)
@@ -203,11 +204,12 @@ import { Icon } from 'astro-icon/components';
       } else {
         const errorData = await res.json();
         console.error("Error del servidor:", errorData);
-        throw new Error("Error en el servidor");
+        alert("Error al guardar: " + (errorData.detail || "Verifica los datos"));
+        btn.disabled = false;
       }
     } catch (err) {
       btn.disabled = false;
-      alert("Hubo un error al guardar el cliente. Revisa la consola.");
+      alert("Hubo un error de conexión con el servidor de Render. Reintenta en unos segundos.");
     }
   });
 

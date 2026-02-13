@@ -48,13 +48,16 @@ const { username } = Astro.props;
   const modal = document.getElementById('modal-editar-cobrador');
   const form = document.getElementById('form-edit-cobrador');
   
+  // URL de producción configurada directamente
+  const API_URL = 'https://cobrodigital.onrender.com';
+
   const cerrarModal = () => {
     modal.classList.add('hidden');
     document.body.style.overflow = 'auto';
   };
 
-  document.getElementById('close-edit-bg').onclick = cerrarModal;
-  document.getElementById('btn-cancel-edit').onclick = cerrarModal;
+  if (document.getElementById('close-edit-bg')) document.getElementById('close-edit-bg').onclick = cerrarModal;
+  if (document.getElementById('btn-cancel-edit')) document.getElementById('btn-cancel-edit').onclick = cerrarModal;
 
   form.onsubmit = async (e) => {
     e.preventDefault();
@@ -62,14 +65,15 @@ const { username } = Astro.props;
     const data = Object.fromEntries(formData);
 
     try {
-      const res = await fetch(`http://localhost:8000/cobradores/${username}`, {
+      // Reemplazamos localhost por la URL de Render
+      const res = await fetch(`${API_URL}/cobradores/${username}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: username, // Requerido por el schema UserCreate
+          username: username,
           nombre: data.nombre,
           zona: data.zona,
-          password: data.password || "", // El backend maneja si es vacío
+          password: data.password || "",
         })
       });
 
@@ -81,7 +85,7 @@ const { username } = Astro.props;
         alert("❌ Error: " + (error.detail || "No se pudo actualizar"));
       }
     } catch (err) {
-      alert("❌ Error de conexión");
+      alert("❌ Error de conexión con el servidor");
     }
   };
 </script>

@@ -79,8 +79,8 @@ import { Icon } from 'astro-icon/components';
 
       <div class="space-y-6">
         <div class="sticky top-28">
-           <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-4">Vista Previa</h3>
-           <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden border-b-8 border-blue-600 shadow-2xl">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-4">Vista Previa</h3>
+            <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden border-b-8 border-blue-600 shadow-2xl">
               <div class="flex justify-between items-start mb-10">
                 <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10">
                   <Icon name="lucide:user" class="w-7 h-7 text-blue-400" />
@@ -100,13 +100,13 @@ import { Icon } from 'astro-icon/components';
                   Listo para Cobrar
                 </span>
               </div>
-           </div>
+            </div>
 
-           <div class="mt-8 p-6 bg-blue-50 rounded-[2rem] border border-blue-100">
+            <div class="mt-8 p-6 bg-blue-50 rounded-[2rem] border border-blue-100">
               <p class="text-[11px] font-bold text-blue-700 leading-relaxed italic text-center">
                 "Asegúrate de que el nombre de usuario sea único para evitar conflictos en el registro de recibos."
               </p>
-           </div>
+            </div>
         </div>
       </div>
     </div>
@@ -114,11 +114,13 @@ import { Icon } from 'astro-icon/components';
 </Layout>
 
 <script>
+  // URL de producción de Render
+  const API_URL = 'https://cobrodigital.onrender.com';
+
   const form = document.getElementById('cobradorForm') as HTMLFormElement;
   const feedback = document.getElementById('feedback') as HTMLDivElement;
   const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement;
 
-  // Real-time Preview
   const inNombre = document.getElementById('in-nombre') as HTMLInputElement;
   const inZona = document.getElementById('in-zona') as HTMLInputElement;
   const inUser = document.getElementById('in-user') as HTMLInputElement;
@@ -160,13 +162,11 @@ import { Icon } from 'astro-icon/components';
     const payload = { ...Object.fromEntries(formData), role: 'cobrador' };
 
     try {
-      const response = await fetch('http://localhost:8000/cobradores', {
+      const response = await fetch(`${API_URL}/cobradores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
-      const result = await response.json();
 
       if (response.ok) {
         feedback.innerText = "✅ COBRADOR REGISTRADO EXITOSAMENTE";
@@ -175,7 +175,8 @@ import { Icon } from 'astro-icon/components';
         updatePreview();
         setTimeout(() => window.location.href = '/dashboard', 1800);
       } else {
-        throw new Error(result.detail || "Error en el registro");
+        const result = await response.json();
+        throw new Error(result.detail || "Error en el registro. Posible usuario duplicado.");
       }
     } catch (err: any) {
       feedback.innerText = "❌ ERROR: " + err.message;

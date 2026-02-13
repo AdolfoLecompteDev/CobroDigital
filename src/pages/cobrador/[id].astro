@@ -54,15 +54,17 @@ const { id } = Astro.params;
 
 <script define:vars={{ id }}>
   let datosCobradorActual = null;
+  // URL de producción de Render
+  const API_URL = 'https://cobrodigital.onrender.com';
 
   async function loadCobradorData() {
     try {
-      // 1. Obtener Clientes del Cobrador
-      const resClientes = await fetch(`http://localhost:8000/clientes?cobrador_id=${id}`);
+      // 1. Obtener Clientes del Cobrador usando la API de Render
+      const resClientes = await fetch(`${API_URL}/clientes?cobrador_id=${id}`);
       const clientes = await resClientes.json();
 
-      // 2. Obtener Datos del Cobrador
-      const resCobs = await fetch(`http://localhost:8000/cobradores`);
+      // 2. Obtener Datos del Cobrador usando la API de Render
+      const resCobs = await fetch(`${API_URL}/cobradores`);
       const cobradores = await resCobs.json();
       const cobrador = cobradores.find(c => c.username === id);
 
@@ -73,7 +75,7 @@ const { id } = Astro.params;
       const totalCartera = clientes.reduce((acc, c) => acc + (c.saldo || 0), 0);
       const clientesActivos = clientes.filter(c => c.activo).length;
 
-      // 4. Renderizar Card Principal con tu diseño original
+      // 4. Renderizar Card Principal
       const cardContent = document.getElementById('card-content');
       cardContent.innerHTML = `
         <div class="flex flex-col lg:flex-row gap-12 items-center relative w-full">
@@ -107,7 +109,7 @@ const { id } = Astro.params;
       document.getElementById('card-loader').classList.add('hidden');
       cardContent.classList.remove('hidden');
 
-      // 5. Renderizar Lista de Clientes detallada
+      // 5. Renderizar Lista de Clientes
       document.getElementById('client-count').innerText = `${clientes.length} Clientes en Cartera`;
       
       const grid = document.getElementById('clientes-grid');
@@ -137,15 +139,14 @@ const { id } = Astro.params;
 
     } catch (error) {
       console.error(error);
-      document.getElementById('cobrador-card').innerHTML = `<p class="text-red-400 font-bold">Error al cargar datos del servidor</p>`;
+      document.getElementById('cobrador-card').innerHTML = `<p class="text-red-400 font-bold p-10 text-center">Error al conectar con el servidor de Render.</p>`;
     }
   }
 
-  // LÓGICA DEL BOTÓN EDITAR (Abre el Modal)
+  // LÓGICA DEL BOTÓN EDITAR
   document.getElementById('editBtn')?.addEventListener('click', () => {
     if (!datosCobradorActual) return;
     
-    // Inyectamos los datos en el modal antes de mostrarlo
     const inputNombre = document.getElementById('edit-nombre');
     const inputZona = document.getElementById('edit-zona');
     

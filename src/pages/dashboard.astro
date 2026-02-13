@@ -81,6 +81,9 @@ import ResumenRapido from '../components/ResumenRapido.astro';
 </Layout>
 
 <script>
+  // Definición de la URL de producción
+  const API_URL = 'https://cobrodigital.onrender.com';
+
   const user = JSON.parse(localStorage.getItem('currentUser'));
   if (!user) window.location.href = '/';
 
@@ -90,7 +93,7 @@ import ResumenRapido from '../components/ResumenRapido.astro';
   const grid = document.getElementById('grid-clientes');
   const title = document.getElementById('list-title');
 
-  // UI Setup
+  // UI Setup inicial
   if (user.role === 'admin') {
     statsCont?.classList.remove('hidden');
     cobradoresCont?.classList.remove('hidden');
@@ -106,24 +109,34 @@ import ResumenRapido from '../components/ResumenRapido.astro';
 
   async function fetchData() {
     try {
+      // Ajuste de URLs dinámicas según el rol
       const urlClientes = user.role === 'admin' 
-        ? 'http://localhost:8000/clientes' 
-        : `http://localhost:8000/clientes?cobrador_id=${user.username}`;
+        ? `${API_URL}/clientes` 
+        : `${API_URL}/clientes?cobrador_id=${user.username}`;
       
       const [resClientes, resCobs] = await Promise.all([
         fetch(urlClientes),
-        user.role === 'admin' ? fetch('http://localhost:8000/cobradores') : Promise.resolve(null)
+        user.role === 'admin' ? fetch(`${API_URL}/cobradores`) : Promise.resolve(null)
       ]);
+
+      if (!resClientes.ok) throw new Error("Error en la carga");
 
       const clientes = await resClientes.json();
       renderClientes(clientes);
 
-      if (resCobs) {
+      if (resCobs && resCobs.ok) {
         const cobradores = await resCobs.json();
         renderCobradores(cobradores);
       }
     } catch (error) {
-      grid.innerHTML = `<div class="col-span-full text-center py-10 bg-red-50 rounded-3xl text-red-500 text-[10px] font-black uppercase tracking-widest">Error de Sincronización</div>`;
+      console.error(error);
+      grid.innerHTML = `
+        <div class="col-span-full text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
+          <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">El servidor está despertando...</p>
+          <p class="text-slate-900 font-black mt-2">Reintentando conexión automáticamente</p>
+        </div>`;
+      // Reintento automático en 5 segundos si falla (útil para el "cold start" de Render)
+      setTimeout(fetchData, 5000);
     }
   }
 
@@ -131,6 +144,11 @@ import ResumenRapido from '../components/ResumenRapido.astro';
     const badge = document.getElementById('client-badge');
     badge.innerText = `${lista.length} CLIENTES`;
     badge.classList.remove('hidden');
+
+    if (lista.length === 0) {
+      grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 font-bold uppercase text-[10px]">No hay registros para mostrar</div>`;
+      return;
+    }
 
     grid.innerHTML = lista.map(c => `
       <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-900/5 transition-all group flex flex-col justify-between min-h-[260px]">
@@ -145,13 +163,13 @@ import ResumenRapido from '../components/ResumenRapido.astro';
             </div>
           </div>
           <h3 class="text-lg font-black text-slate-800 leading-tight mb-1 group-hover:text-blue-600 transition-colors">${c.nombre}</h3>
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight truncate">${c.barrio}</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight truncate">${c.barrio || 'Sin ubicación'}</p>
         </div>
 
         <div class="mt-6 pt-4 border-t border-slate-50 flex items-end justify-between">
           <div>
             <p class="text-[8px] text-slate-300 uppercase font-black mb-1">Saldo</p>
-            <p class="text-xl font-black text-slate-900">$${c.saldo.toLocaleString()}</p>
+            <p class="text-xl font-black text-slate-900">$${(c.saldo || 0).toLocaleString()}</p>
           </div>
           <a href="/cliente/${c.id}" class="bg-slate-900 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-all shadow-lg active:scale-90">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>

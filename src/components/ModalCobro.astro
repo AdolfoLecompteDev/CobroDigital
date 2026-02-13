@@ -74,6 +74,13 @@ const { clienteNombre, cuotaSugerida, clienteId } = Astro.props;
   const modalError = document.getElementById('modal-error');
   const textBtn = document.getElementById('text-btn');
 
+  // --- CONFIGURACIÓN DINÁMICA ---
+  // import.meta.env no siempre está disponible dentro de define:vars de forma directa, 
+  // así que usamos una técnica segura para Astro:
+  const API_URL = 'https://cobrodigital.onrender.com'; 
+  // Nota: Si prefieres mantenerlo flexible, asegúrate de que PUBLIC_API_URL 
+  // esté en tus variables de entorno de Vercel.
+
   // Abrir modal
   openBtn?.addEventListener('click', () => {
     modal?.classList.remove('hidden');
@@ -108,7 +115,8 @@ const { clienteNombre, cuotaSugerida, clienteId } = Astro.props;
     if (textBtn) textBtn.innerText = "PROCESANDO COBRO...";
 
     try {
-      const response = await fetch('http://localhost:8000/pagar', {
+      // CAMBIO AQUÍ: Usamos la URL de Render en lugar de localhost
+      const response = await fetch(`${API_URL}/pagar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
