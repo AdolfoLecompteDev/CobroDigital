@@ -73,49 +73,23 @@ import { Icon } from 'astro-icon/components';
 <script>
   const API_URL = 'https://cobrodigital.onrender.com';
 
-  // 1. Redirección automática si ya existe sesión
-  if (localStorage.getItem('currentUser')) {
-    window.location.href = '/dashboard';
+  // 1. Redirección relámpago: Evitar bucle si ya hay sesión
+  const session = localStorage.getItem('currentUser');
+  if (session && session !== 'undefined' && session !== 'null') {
+    window.location.replace('/dashboard');
   }
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMsg = document.getElementById('error-msg');
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-  const statusDot = document.getElementById('status-dot');
-  const statusText = document.getElementById('status-text');
 
-  // 2. Verificar si el backend está activo (Health Check)
-  async function checkServer() {
-    try {
-      // Intentamos una petición rápida para despertar a Render
-      const res = await fetch(`${API_URL}/clientes`);
-      if (res.ok || res.status === 401) { // 401 significa que el servidor respondió pero no estamos autorizados (está vivo)
-        if (statusDot) statusDot.style.backgroundColor = '#10b981'; // emerald-500
-        if (statusText) statusText.innerText = "Servidor Online";
-      }
-    } catch (e) {
-      if (statusText) statusText.innerText = "Servidor Despertando...";
-    }
-  }
-  checkServer();
-
-  // 3. Manejo del Login
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!errorMsg || !submitBtn) return;
 
     errorMsg.classList.add('hidden');
-    
-    // Estado de carga en el botón
-    const originalContent = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = `
-      <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      <span>Validando...</span>
-    `;
+    const originalContent = submitBtn.innerHTML;
 
     const username = (document.getElementById('username') as HTMLInputElement).value;
     const password = (document.getElementById('password') as HTMLInputElement).value;
@@ -127,15 +101,12 @@ import { Icon } from 'astro-icon/components';
         body: JSON.stringify({ username, password })
       });
 
-      if (!response.ok) throw new Error('Credenciales incorrectas');
+      if (!response.ok) throw new Error('Auth failed');
 
       const user = await response.json();
-      
-      // Guardar datos del usuario
+      // Guardar con validación
       localStorage.setItem('currentUser', JSON.stringify(user));
-      
-      // Ir al dashboard
-      window.location.href = '/dashboard';
+      window.location.replace('/dashboard');
 
     } catch (err) {
       errorMsg.classList.remove('hidden');
