@@ -83,25 +83,28 @@ import ResumenRapido from '../components/ResumenRapido.astro';
 <script>
   const API_URL = 'https://cobrodigital.onrender.com';
 
-  // 1. Verificación de Seguridad Inmediata
-  const rawUser = localStorage.getItem('currentUser');
-  if (!rawUser) {
-    window.location.href = '/';
+  // 1. VERIFICACIÓN DE SEGURIDAD (EJECUCIÓN INMEDIATA)
+  const session = localStorage.getItem('currentUser');
+  
+  if (!session || session === 'undefined' || session === 'null') {
+    console.log("Sesión inválida, redirigiendo...");
+    window.location.replace('/');
+    // IMPORTANTE: Detenemos el hilo de ejecución
+    window.stop(); 
   }
 
-  const user = JSON.parse(rawUser || '{}');
+  // Si llegamos aquí, la sesión existe
+  const user = JSON.parse(session || '{}');
 
-  // 2. Elementos del DOM
-  const statsCont = document.getElementById('stats-container');
-  const cobradoresCont = document.getElementById('cobradores-container');
-  const btnCobrador = document.getElementById('btn-nuevo-cobrador');
-  const grid = document.getElementById('grid-clientes');
-  const title = document.getElementById('list-title');
-  const roleText = document.getElementById('role-text');
-  const roleIcon = document.getElementById('role-icon');
-
-  // 3. Configuración de Interfaz según Rol
+  // 2. CONFIGURACIÓN DE UI
   function setupUI() {
+    const roleText = document.getElementById('role-text');
+    const roleIcon = document.getElementById('role-icon');
+    const title = document.getElementById('list-title');
+    const statsCont = document.getElementById('stats-container');
+    const cobradoresCont = document.getElementById('cobradores-container');
+    const btnCobrador = document.getElementById('btn-nuevo-cobrador');
+
     if (user.role === 'admin') {
       statsCont?.classList.remove('hidden');
       cobradoresCont?.classList.remove('hidden');
@@ -116,8 +119,12 @@ import ResumenRapido from '../components/ResumenRapido.astro';
     }
   }
 
-  // 4. Obtención de Datos
+  // 3. OBTENCIÓN DE DATOS (SOLO SI HAY USUARIO)
   async function fetchData() {
+    if (!user.username) return;
+
+    const grid = document.getElementById('grid-clientes');
+
     try {
       const urlClientes = user.role === 'admin' 
         ? `${API_URL}/clientes` 
@@ -128,7 +135,7 @@ import ResumenRapido from '../components/ResumenRapido.astro';
         user.role === 'admin' ? fetch(`${API_URL}/cobradores`) : Promise.resolve(null)
       ]);
 
-      if (!resClientes.ok) throw new Error("Error en servidor");
+      if (!resClientes.ok) throw new Error("Error API");
 
       const clientes = await resClientes.json();
       renderClientes(clientes);
@@ -138,89 +145,24 @@ import ResumenRapido from '../components/ResumenRapido.astro';
         renderCobradores(cobradores);
       }
     } catch (error) {
-      console.error("Fetch error:", error);
-      if (grid) {
-        grid.innerHTML = `
-          <div class="col-span-full text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
-            <div class="animate-spin inline-block w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
-            <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">El servidor está despertando...</p>
-            <p class="text-slate-900 font-black mt-2">Sincronizando con la nube de Render</p>
-          </div>`;
-      }
-      setTimeout(fetchData, 5000); 
+      console.error("Error cargando datos:", error);
+      // Reintento más largo (10 seg) para no saturar si falla
+      setTimeout(fetchData, 10000);
     }
   }
 
-  // 5. Renderizado de Componentes
-  function renderClientes(lista) {
-    const badge = document.getElementById('client-badge');
-    if (badge) {
-      badge.innerText = `${lista.length} CLIENTES`;
-      badge.classList.remove('hidden');
-    }
+  // Funciones de Render (Mantén tus funciones renderClientes y renderCobradores aquí...)
+  function renderClientes(lista) { /* ... tu código ... */ }
+  function renderCobradores(lista) { /* ... tu código ... */ }
 
-    if (!grid) return;
+  // 4. LOGOUT SEGURO
+  document.getElementById('logout-btn').onclick = () => {
+    localStorage.removeItem('currentUser');
+    localStorage.clear();
+    window.location.replace('/');
+  };
 
-    if (lista.length === 0) {
-      grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400 font-bold uppercase text-[10px]">No hay préstamos registrados</div>`;
-      return;
-    }
-
-    grid.innerHTML = lista.map(c => `
-      <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-900/5 transition-all group flex flex-col justify-between min-h-[260px]">
-        <div>
-          <div class="flex justify-between items-start mb-4">
-            <div class="bg-slate-50 text-slate-400 p-3 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <div class="text-right">
-              <p class="text-[8px] font-black text-slate-300 uppercase tracking-tighter">Cuota Diaria</p>
-              <p class="text-sm font-black text-slate-900">$${Number(c.cuota || 0).toLocaleString()}</p>
-            </div>
-          </div>
-          <h3 class="text-lg font-black text-slate-800 leading-tight mb-1 group-hover:text-blue-600 transition-colors">${c.nombre}</h3>
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight truncate">${c.barrio || 'Sin ubicación'}</p>
-        </div>
-
-        <div class="mt-6 pt-4 border-t border-slate-50 flex items-end justify-between">
-          <div>
-            <p class="text-[8px] text-slate-300 uppercase font-black mb-1">Saldo Pendiente</p>
-            <p class="text-xl font-black text-slate-900">$${Number(c.saldo || 0).toLocaleString()}</p>
-          </div>
-          <a href="/cliente/${c.id}" class="bg-slate-900 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-all shadow-lg active:scale-90">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
-          </a>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function renderCobradores(lista) {
-    const cont = document.getElementById('lista-cobradores');
-    if (!cont) return;
-    cont.innerHTML = lista.map(cob => `
-      <a href="/cobrador/${cob.username}" class="bg-white rounded-2xl p-4 border border-slate-100 hover:border-blue-200 transition-all flex items-center gap-4 group">
-        <div class="bg-blue-50 text-blue-600 p-2.5 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        </div>
-        <div class="overflow-hidden">
-          <p class="text-xs font-black text-slate-900 truncate">${cob.nombre}</p>
-          <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">${cob.zona || 'Sin Zona'}</p>
-        </div>
-      </a>
-    `).join('');
-  }
-
-  // 6. Cierre de Sesión
-  const logoutBtn = document.getElementById('logout-btn');
-  if (logoutBtn) {
-    logoutBtn.onclick = () => {
-      localStorage.removeItem('currentUser');
-      window.location.href = '/';
-    };
-  }
-
-  // Inicialización
+  // INICIO
   setupUI();
   fetchData();
 </script>
