@@ -6,20 +6,25 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Prioridad 1: Variable de entorno de Render (Production)
-# Prioridad 2: Configuración local de MySQL
-SQLALCHEMY_DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "mysql+pymysql://root:Clave1234@localhost:3306/cobrodigital"
-)
+# Intentamos obtener la URL de PostgreSQL desde las variables de entorno de Render
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Ajustes de conexión para producción (MySQL/PostgreSQL)
+# --- CORRECCIÓN CRÍTICA PARA RENDER/POSTGRESQL ---
+# Si la URL empieza con "postgres://", SQLAlchemy fallará. 
+# Debemos cambiarlo manualmente a "postgresql://".
+if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Respaldo por si olvidas configurar la variable (puedes dejarlo en blanco o usar SQLite local)
+if not SQLALCHEMY_DATABASE_URL:
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+
+# Configuramos el motor de la base de datos
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_pre_ping=True,  # Verifica si la conexión sigue viva antes de usarla
-    pool_recycle=3600,   # Refresca las conexiones cada hora para evitar timeouts
-    pool_size=10,        # Número de conexiones simultáneas permitidas
-    max_overflow=20      # Conexiones extra si hay mucho tráfico
+    pool_pre_ping=True,  # Evita errores de "conexión perdida"
+    pool_recycle=3600    # Refresca conexiones inactivas
+    # Nota: No incluimos pool_size alto para evitar saturar el plan Free de Postgres de Render
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
