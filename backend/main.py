@@ -1,19 +1,33 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
-import models, database, auth, schemas
 from datetime import datetime
 
+# Importaciones de tus archivos locales
+import models, database, auth, schemas
+
 # Inicializar tablas en la base de datos
+# Render ejecutará esto cada vez que inicie el servicio
 models.Base.metadata.create_all(bind=database.engine)
 
-app = FastAPI(title="CobroDigital API - Versión Local Pro")
+app = FastAPI(title="CobroDigital API - Producción")
 
-# Configuración de CORS
+# --- CONFIGURACIÓN DE CORS ---
+# Obtenemos la URL de Vercel de las variables de entorno para mayor seguridad
+# Si no existe, permite localhost para pruebas
+VERCEL_URL = os.getenv("VERCEL_URL", "http://localhost:4321")
+
+origins = [
+    VERCEL_URL,
+    "http://localhost:4321",
+    "http://127.0.0.1:4321"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,7 +35,11 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {"status": "online", "message": "API de CobroDigital funcionando con Frecuencia y Reversión"}
+    return {
+        "status": "online", 
+        "message": "API de CobroDigital operativa en Render",
+        "environment": "production" if os.getenv("RENDER") else "local"
+    }
 
 # --- SECCIÓN: AUTH & PERFIL ---
 
@@ -98,8 +116,8 @@ def crear_cliente(data: schemas.ClienteCreate, db: Session = Depends(database.ge
         telefono=data.telefono,
         saldo=data.saldo,
         interes=data.interes,
-        frecuencia=data.frecuencia, # Nuevo campo
-        cuota_sugerida=data.cuota_sugerida, # Nuevo campo
+        frecuencia=data.frecuencia,
+        cuota_sugerida=data.cuota_sugerida,
         cobrador_id=user.id,
         activo=True
     )
@@ -118,7 +136,6 @@ def asignar_nueva_deuda(cliente_id: int, data: schemas.ClienteCreate, db: Sessio
     cliente.cuota_sugerida = data.cuota_sugerida
     cliente.frecuencia = data.frecuencia
     cliente.activo = True 
-    
     cliente.direccion = data.direccion
     cliente.telefono = data.telefono
 
@@ -157,20 +174,15 @@ def registrar_pago(data: schemas.PagoCreate, db: Session = Depends(database.get_
 def obtener_historial_pagos(cliente_id: int, db: Session = Depends(database.get_db)):
     return db.query(models.Pago).filter(models.Pago.cliente_id == cliente_id).all()
 
-# --- NUEVO ENDPOINT: ELIMINAR PAGO (REVERSIÓN) ---
-
 @app.delete("/pagos/{pago_id}")
 def eliminar_pago(pago_id: int, db: Session = Depends(database.get_db)):
-    """Elimina un pago y devuelve el monto al saldo del cliente"""
     pago = db.query(models.Pago).filter(models.Pago.id == pago_id).first()
     if not pago:
         raise HTTPException(status_code=404, detail="Pago no encontrado")
 
     cliente = db.query(models.Cliente).filter(models.Cliente.id == pago.cliente_id).first()
     if cliente:
-        # Devolvemos el dinero a la deuda
         cliente.saldo += pago.monto
-        # Si el cliente estaba inactivo (había terminado de pagar), lo reactivamos
         if not cliente.activo:
             cliente.activo = True
 
